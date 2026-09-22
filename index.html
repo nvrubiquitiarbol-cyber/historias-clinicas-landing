@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- CHECK 1: viewport-fit=cover habilita env(safe-area-inset-*) en iPhone con notch / Isla Dinámica -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Historias Clínicas — Edición Consultorio | Misiones Tech Service</title>
+    <meta name="description" content="Sistema de fichas médicas, evoluciones y recetas para consultorios independientes. Pago único, sin Internet, datos protegidos en su computadora.">
+
+    <!-- CHECK 1: Meta para iOS — color de barra de estado y capacidad standalone -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#0284C7">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'medico': {
+                            50: '#F0F9FF',
+                            100: '#E0F2FE',
+                            200: '#BAE6FD',
+                            300: '#7DD3FC',
+                            400: '#38BDF8',
+                            500: '#0284C7',
+                            600: '#0369A1',
+                            700: '#1E40AF',
+                            800: '#1E3A8A',
+                            900: '#1E293B',
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Segoe UI', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <style>
+        /* ========== CHECK 1: RENDERIZADO RETINA & iOS ========== */
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+
+        /* CHECK 4: Bloqueo estricto de desborde horizontal global */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+
+        /* ========== ANIMACIÓN SUAVE DE ENTRADA ========== */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ========== EFECTO HOVER EN TARJETAS ========== */
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(2, 132, 199, 0.12);
+        }
+        /* CHECK 3: Feedback táctil visual en tarjetas */
+        @media (hover: none) {
+            .card-hover:hover { transform: none; box-shadow: none; }
+            .card-hover:active { transform: scale(0.98); }
+        }
+
+        /* ========== MOCKUP: BARRA DE TÍTULO ESTILO WINDOWS ========== */
+        .mockup-window {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(30, 41, 59, 0.25);
+        }
+        .mockup-titlebar {
+            background: linear-gradient(135deg, #1E40AF 0%, #0284C7 100%);
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .mockup-dots {
+            display: flex;
+            gap: 6px;
+        }
+        .mockup-dots span {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            display: block;
+        }
+
+        /* CHECK 2: Mockup móvil — contenedor con scroll horizontal suave si se necesita */
+        @media (max-width: 639px) {
+            .mockup-scroll-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x mandatory;
+                scrollbar-width: none; /* Firefox */
+                padding-bottom: 4px;
+            }
+            .mockup-scroll-wrapper::-webkit-scrollbar {
+                display: none; /* Chrome / Safari */
+            }
+            .mockup-scroll-inner {
+                min-width: 480px;
+                scroll-snap-align: start;
+            }
+        }
+
+        /* ========== ACORDEÓN FAQ ========== */
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.3s ease;
+        }
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+        }
+        .faq-item.active .faq-chevron {
+            transform: rotate(180deg);
+        }
+        .faq-chevron {
+            transition: transform 0.3s ease;
+        }
+
+        /* ========== NAVBAR SCROLL ========== */
+        /* CHECK 1: WebKit backdrop-filter fallback para Safari */
+        .navbar-scrolled {
+            background: rgba(255,255,255,0.97) !important;
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 2px 20px rgba(30, 41, 59, 0.08);
+        }
+
+        /* ========== BOTÓN FLOTANTE WHATSAPP ========== */
+        /* CHECK 1: Safe area insets para iPhone — usa env() con fallback */
+        .whatsapp-float {
+            position: fixed;
+            bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+            right: max(20px, env(safe-area-inset-right, 20px));
+            z-index: 999;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #25D366;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            /* CHECK 3: Feedback táctil visual */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 28px rgba(37, 211, 102, 0.55);
+        }
+        .whatsapp-float:active {
+            transform: scale(0.95);
+        }
+
+        /* Pulso en el botón flotante */
+        .whatsapp-float::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #25D366;
+            animation: pulse-wa 2s infinite;
+            z-index: -1;
+        }
+        @keyframes pulse-wa {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        /* ========== GRADIENTE HERO ========== */
+        .hero-gradient {
+            background: linear-gradient(160deg, #F0F9FF 0%, #E0F2FE 40%, #FFFFFF 100%);
+        }
+
+        /* ========== LÍNEA DECORATIVA PASOS ========== */
+        .step-connector {
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            width: calc(100% - 56px);
+            height: 3px;
+            background: linear-gradient(90deg, #0284C7, #1E40AF);
+            z-index: 0;
+        }
+
+        /* ========== TABLA COMPARATIVA RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .compare-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* ========== SCROLLBAR PERSONALIZADO EN MOCKUP ========== */
+        .mockup-body::-webkit-scrollbar { width: 6px; }
+        .mockup-body::-webkit-scrollbar-track { background: #f1f5f9; }
+        .mockup-body::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+
+        /* ========== CHECK 3: FEEDBACK TÁCTIL EN BOTONES CTA ========== */
+        .cta-btn {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            transition: all 0.3s ease;
+        }
+        .cta-btn:active {
+            transform: scale(0.95) !important;
+        }
+
+        /* ========== CHECK 2: MOCKUP TIPOGRAFÍAS LEGIBLES EN MÓVIL ========== */
+        @media (max-width: 639px) {
+            .mockup-body .text-\[10px\],
+            .mockup-body .text-\[9px\] {
+                font-size: 11px !important;
+                line-height: 1.4 !important;
+            }
+            .mockup-body .text-\[11px\] {
+                font-size: 12px !important;
+            }
+        }
+
+        /* ========== CHECK 1: FOOTER SAFE AREA ========== */
+        .footer-safe {
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+        }
+
+        /* CHECK 4: Prevenir que decoraciones absolutas generen overflow */
+        section { overflow: hidden; }
+    </style>
+</head>
+<!-- CHECK 1: antialiased ya viene de Tailwind, overflow-x-hidden previene desborde global -->
+<body class="bg-white text-medico-900 font-sans antialiased overflow-x-hidden">
+
+    <!-- ============================================================
+         SECCIÓN 1: BARRA DE NAVEGACIÓN SUPERIOR (NAVBAR)
+         ============================================================ -->
+    <!-- CHECK 1: -webkit-backdrop-filter para glassmorphism en Safari iOS -->
+    <nav id="navbar" class="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-md transition-all duration-300" style="-webkit-backdrop-filter: blur(12px);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 lg:h-[72px]">
+                
+                <!-- Identidad / Logo -->
+                <a href="https://www.facebook.com/elektrotechservice/" target="_blank" rel="noopener" class="flex items-center gap-2 shrink-0">
+                    <!-- Ícono cruz médica -->
+                    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-medico-500 to-medico-700 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
+                    </div>
+                    <div class="leading-tight">
+                        <span class="text-sm font-bold text-medico-700 block">Misiones Tech Service</span>
+                        <span class="text-[11px] text-medico-500 block">Historias Clínicas</span>
+                    </div>
+                </a>
+
+                <!-- Enlaces de navegación (desktop) -->
+                <div class="hidden lg:flex items-center gap-8">
+                    <a href="#inicio" class="text-sm text-medico-900 hover:text-medico-500 transition-colors font-medium">Inicio</a>
+                    <a href="#beneficios" class="text-sm text-medico-900 hover:text-medico-500 transition-colors font-medium">Beneficios</a>
+                    <a href="#recetario" class="text-sm text-medico-900 hover:text-medico-500 transition-colors font-medium">Recetario</a>
+                    <a href="#preguntas" class="text-sm text-medico-900 hover:text-medico-500 transition-colors font-medium">Preguntas Frecuentes</a>
+                </div>
+
+                <!-- Botón CTA Navbar + Menú Móvil -->
+                <div class="flex items-center gap-3">
+                    <a href="https://wa.me/5493755548794?text=Hola,%20quiero%20consultar%20el%20precio%20y%20detalles%20del%20sistema%20de%20Historias%20Cl%C3%ADnicas"
+                       target="_blank" rel="noopener"
+                       class="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-medico-500 to-medico-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:shadow-lg hover:shadow-medico-500/25 transition-all duration-300 cta-btn">
+                        <!-- Ícono WhatsApp inline -->
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        Pedir Presupuesto
+                    </a>
+
+                    <!-- Hamburger móvil — CHECK 3: min-h-[48px] zona táctil -->
+                    <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg hover:bg-medico-50 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center" aria-label="Abrir menú">
+                        <i data-lucide="menu" class="w-6 h-6 text-medico-900"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menú Móvil desplegable -->
+        <div id="mobile-menu" class="lg:hidden hidden bg-white border-t border-medico-100">
+            <!-- CHECK 1: safe-area padding en menú móvil -->
+            <div class="px-4 py-4 space-y-2" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));">
+                <!-- CHECK 3: enlaces con min-h-[48px] táctil -->
+                <a href="#inicio" class="block py-3 px-3 rounded-lg text-medico-900 hover:bg-medico-50 font-medium min-h-[48px] flex items-center" onclick="closeMobileMenu()">Inicio</a>
+                <a href="#beneficios" class="block py-3 px-3 rounded-lg text-medico-900 hover:bg-medico-50 font-medium min-h-[48px] flex items-center" onclick="closeMobileMenu()">Beneficios</a>
+                <a href="#recetario" class="block py-3 px-3 rounded-lg text-medico-900 hover:bg-medico-50 font-medium min-h-[48px] flex items-center" onclick="closeMobileMenu()">Recetario</a>
+                <a href="#preguntas" class="block py-3 px-3 rounded-lg text-medico-900 hover:bg-medico-50 font-medium min-h-[48px] flex items-center" onclick="closeMobileMenu()">Preguntas Frecuentes</a>
+                <a href="https://wa.me/5493755548794?text=Hola,%20quiero%20consultar%20el%20precio%20y%20detalles%20del%20sistema%20de%20Historias%20Cl%C3%ADnicas"
+                   target="_blank" rel="noopener"
+                   class="block py-3 px-3 rounded-lg bg-medico-500 text-white font-semibold text-center mt-2 min-h-[48px] flex items-center justify-center cta-btn">
+                    Pedir Presupuesto por WhatsApp
+                </a>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- ============================================================
+         SECCIÓN 2: CABECERA PRINCIPAL (HERO)
+         ============================================================ -->
+    <section id="inicio" class="hero-gradient pt-28 lg:pt-36 pb-16 lg:pb-24 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                
+                <!-- Columna izquierda: Texto -->
+                <div class="fade-up">
+                    <!-- Etiqueta superior -->
+                    <div class="inline-flex items-center gap-2 bg-medico-100 text-medico-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        Edición Consultorio — Pago Único
+                    </div>
+
+                    <h1 class="text-[1.7rem] sm:text-4xl lg:text-[2.75rem] font-extrabold text-medico-900 leading-tight mb-6">
+                        El sistema de fichas médicas y recetas que cuida su tiempo y 
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-medico-500 to-medico-700">protege la privacidad</span> 
+                        de sus pacientes.
+                    </h1>
+
+                    <p class="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-xl">
+                        Instalación local en su computadora, sin alquileres mensuales y con funcionamiento garantizado al 100&percnt; sin depender de Internet ni de la nube.
+                    </p>
+
+                    <!-- Botones Hero — CHECK 3: w-full en móvil, min-h-[48px] -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="https://wa.me/5493755548794?text=Hola,%20quiero%20consultar%20el%20precio%20y%20detalles%20del%20sistema%20de%20Historias%20Cl%C3%ADnicas"
+                           target="_blank" rel="noopener"
+                           class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-medico-500 to-medico-700 text-white font-semibold px-7 py-3.5 rounded-xl hover:shadow-xl hover:shadow-medico-500/25 transition-all duration-300 text-base w-full sm:w-auto min-h-[48px] cta-btn">
+                            <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            Consultar Precio por WhatsApp
+                        </a>
+                        <a href="#funciones"
+                           class="inline-flex items-center justify-center gap-2 bg-white text-medico-700 font-semibold px-7 py-3.5 rounded-xl border-2 border-medico-200 hover:border-medico-400 hover:bg-medico-50 transition-all duration-300 text-base w-full sm:w-auto min-h-[48px] cta-btn">
+                            <i data-lucide="play-circle" class="w-5 h-5"></i>
+                            Ver Cómo Funciona
+                        </a>
+                    </div>
+
+                    <!-- Indicadores de confianza -->
+                    <div class="flex flex-wrap gap-4 sm:gap-6 mt-8 pt-6 border-t border-medico-100">
+                        <div class="flex items-center gap-2 text-sm text-slate-500">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-green-600 shrink-0"></i>
+                            Datos 100&percnt; privados
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-slate-500">
+                            <i data-lucide="wifi-off" class="w-4 h-4 text-medico-500 shrink-0"></i>
+                            Sin necesidad de Internet
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-slate-500">
+                            <i data-lucide="badge-check" class="w-4 h-4 text-medico-700 shrink-0"></i>
+                            Pago único, sin abonos
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna derecha: Mockup del Software -->
+                <!-- CHECK 2: En móvil, wrapper con scroll horizontal táctil ultra-fluido -->
+                <div class="fade-up lg:pl-4">
+                    <div class="mockup-scroll-wrapper rounded-lg">
+                        <div class="mockup-scroll-inner">
+                            <div class="mockup-window max-w-2xl mx-auto">
+                                <!-- Barra de título tipo Windows -->
+                                <div class="mockup-titlebar">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <svg class="w-4 h-4 text-blue-200 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
+                                        <span class="text-xs text-white/90 font-medium truncate">Historias Clínicas — Dr. Juan Carlos Avellán (M.P. 5966)</span>
+                                    </div>
+                                    <div class="mockup-dots shrink-0">
+                                        <span class="bg-yellow-400/80"></span>
+                                        <span class="bg-green-400/80"></span>
+                                        <span class="bg-red-400/80"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Barra de herramientas -->
+                                <div class="bg-slate-50 border-b border-slate-200 px-3 py-2 flex flex-wrap items-center gap-2">
+                                    <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded px-2 py-1 flex-1 min-w-[140px] max-w-xs">
+                                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+                                        <span class="text-[11px] text-slate-400 truncate">Buscar Paciente (F2)...</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-[10px] bg-medico-500 text-white px-2 py-0.5 rounded font-medium whitespace-nowrap">+ Nuevo Paciente</span>
+                                        <span class="text-[10px] bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded whitespace-nowrap">Editar Ficha</span>
+                                        <span class="text-[10px] bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded whitespace-nowrap">Imprimir Receta</span>
+                                        <span class="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded font-medium whitespace-nowrap">HACER BACKUP</span>
+                                    </div>
+                                </div>
+
+                                <!-- Cuerpo del programa simulado -->
+                                <div class="mockup-body bg-white p-3 sm:p-4">
+                                    <div class="grid grid-cols-5 gap-3">
+                                        <!-- Panel izquierdo: Evolución Clínica -->
+                                        <div class="col-span-3 space-y-2.5">
+                                            <!-- Tabs -->
+                                            <div class="flex gap-1 border-b border-slate-200 pb-1">
+                                                <span class="text-[10px] font-semibold text-medico-700 border-b-2 border-medico-500 pb-1 px-1 whitespace-nowrap">Historia Clínica</span>
+                                                <span class="text-[10px] text-slate-400 pb-1 px-1 whitespace-nowrap">Biometría y Medicaciones</span>
+                                            </div>
+                                            <div class="text-[10px] text-medico-600 font-semibold bg-medico-50 px-2 py-1 rounded">
+                                                PACIENTE: <span class="text-medico-800">García, María Eugenia</span>
+                                                <span class="float-right text-slate-500">Edad: 47</span>
+                                            </div>
+                                            <div class="text-[10px] font-bold text-slate-700 mt-1">NUEVA EVOLUCIÓN CLÍNICA</div>
+                                            
+                                            <div class="space-y-1.5">
+                                                <div>
+                                                    <span class="text-[9px] text-slate-500 font-medium">Motivo:</span>
+                                                    <div class="bg-slate-50 rounded px-2 py-1 text-[10px] text-slate-600 border border-slate-100">Control de rutina, cefalea tensional recurrente</div>
+                                                </div>
+                                                <div>
+                                                    <span class="text-[9px] text-slate-500 font-medium">Enfermedad Actual:</span>
+                                                    <div class="bg-slate-50 rounded px-2 py-1.5 text-[10px] text-slate-600 border border-slate-100 leading-relaxed">Paciente refiere cefalea tensional de 3 días de evolución, sin signos de alarma...</div>
+                                                </div>
+                                                <div>
+                                                    <span class="text-[9px] text-slate-500 font-medium">Diagnóstico:</span>
+                                                    <div class="bg-slate-50 rounded px-2 py-1 text-[10px] text-slate-600 border border-slate-100">G44.2 — Cefalea tensional crónica</div>
+                                                </div>
+                                            </div>
+
+                                            <button class="w-full bg-gradient-to-r from-medico-500 to-medico-600 text-white text-[10px] font-semibold py-1.5 rounded mt-1 hover:opacity-90 transition">
+                                                Guardar Evolución (F10)
+                                            </button>
+                                        </div>
+
+                                        <!-- Panel derecho: Antecedentes -->
+                                        <div class="col-span-2 space-y-2">
+                                            <div class="text-[10px] font-bold text-slate-700">ANTECEDENTES PERSONALES</div>
+                                            <div>
+                                                <span class="text-[9px] text-red-600 font-semibold">Patológicos (ANTPAT):</span>
+                                                <div class="bg-red-50 rounded px-2 py-1 text-[10px] text-slate-600 border border-red-100 mt-0.5">HTA, DBT tipo II controlada</div>
+                                            </div>
+                                            <div>
+                                                <span class="text-[9px] text-amber-600 font-semibold">Tratamientos Habituales:</span>
+                                                <div class="bg-amber-50 rounded px-2 py-1 text-[10px] text-slate-600 border border-amber-100 mt-0.5">Enalapril 10mg/día, Metformina 850mg</div>
+                                            </div>
+                                            <div>
+                                                <span class="text-[9px] text-purple-600 font-semibold">Alergias (ANTALE):</span>
+                                                <div class="bg-purple-50 rounded px-2 py-1 text-[10px] text-slate-600 border border-purple-100 mt-0.5">Penicilina — Reacción cutánea</div>
+                                            </div>
+                                            <div>
+                                                <span class="text-[9px] text-slate-500 font-semibold">Tóxicos / Hábitos:</span>
+                                                <div class="bg-slate-50 rounded px-2 py-1 text-[10px] text-slate-600 border border-slate-100 mt-0.5">No fuma. Consumo social alcohol.</div>
+                                            </div>
+                                            <button class="w-full bg-medico-700 text-white text-[10px] font-semibold py-1.5 rounded mt-1 hover:opacity-90 transition">
+                                                Guardar Antecedentes
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Historial inferior -->
+                                    <div class="mt-3 border-t border-slate-200 pt-2">
+                                        <div class="text-[10px] font-bold text-slate-700 mb-1">HISTORIAL DE CONSULTAS ANTERIORES</div>
+                                        <div class="grid grid-cols-4 text-[9px] font-semibold text-slate-500 border-b border-slate-100 pb-1">
+                                            <span>ID</span><span>Fecha</span><span>Motivo</span><span>Diagnóstico</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 text-[9px] text-slate-500 py-1 border-b border-slate-50">
+                                            <span class="text-medico-600">1024</span><span>15/08/2026</span><span>Control HTA</span><span>I10 — HTA esencial</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 text-[9px] text-slate-500 py-1">
+                                            <span class="text-medico-600">1019</span><span>22/06/2026</span><span>Dolor lumbar</span><span>M54.5 — Lumbalgia</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Barra de estado inferior -->
+                                <div class="bg-medico-500 px-3 py-1 flex items-center justify-between">
+                                    <span class="text-[10px] text-white/80 truncate">Paciente seleccionado: García, María Eugenia</span>
+                                    <span class="text-[10px] text-white/60 shrink-0">v2.0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- CHECK 2: Indicador de deslizar solo visible en móvil -->
+                    <p class="text-center text-[11px] text-slate-400 mt-2 sm:hidden flex items-center justify-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 5l7 7-7 7M3 12h18"/></svg>
+                        Deslice para explorar la pantalla completa
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ============================================================
+         SECCIÓN 3: CUADRO COMPARATIVO (PROBLEMA vs. SOLUCIÓN)
+         ============================================================ -->
+    <section id="beneficios" class="py-16 lg:py-24 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <div class="text-center mb-14 fade-up">
+                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-medico-900 mb-4">
+                    ¿Por qué no depender de sistemas en la nube?
+                </h2>
+                <p class="text-base sm:text-lg text-slate-500 max-w-2xl mx-auto">
+                    Compare las diferencias reales entre un sistema web con abono mensual y una solución instalada en su propio equipo.
+                </p>
+            </div>
+
+            <div class="compare-grid grid grid-cols-2 gap-4 sm:gap-6 lg:gap-8 max-w-5xl mx-auto fade-up">
+                
+                <!-- Columna PROBLEMA: software web -->
+                <div class="bg-white rounded-2xl border border-red-100 p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-red-500"></div>
+                    <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                            <i data-lucide="cloud-off" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500"></i>
+                        </div>
+                        <h3 class="font-bold text-red-700 text-sm sm:text-base lg:text-lg leading-tight">Software Web Tradicional</h3>
+                    </div>
+                    <ul class="space-y-3 sm:space-y-4">
+                        <li class="flex items-start gap-2 sm:gap-3">
+                            <i data-lucide="x-circle" class="w-5 h-5 text-red-400 shrink-0 mt-0.5"></i>
+                            <span class="text-xs sm:text-sm text-slate-600"><strong class="text-slate-700">Cuotas mensuales en dólares</strong> que se acumulan año tras año sin fin.</span>
+                        </li>
+                        <li class="flex items-start gap-2 sm:gap-3">
+                            <i data-lucide="x-circle" class="w-5 h-5 text-red-400 shrink-0 mt-0.5"></i>
+                            <span class="text-xs sm:text-sm text-slate-600"><strong class="text-slate-700">Demoras al cargar cada pantalla,</strong> porque depende de la velocidad de su conexión.</span>
+                        </li>
+                        <li class="flex items-start gap-2 sm:gap-3">
+                            <i data-lucide="x-circle" class="w-5 h-5 text-red-400 shrink-0 mt-0.5"></i>
+                            <span class="text-xs sm:text-sm text-slate-600"><strong class="text-slate-700">Sin conexión = sin sistema.</strong> Si se corta Internet, no puede atender.</span>
+                        </li>
+                        <li class="flex items-start gap-2 sm:gap-3">
+                            <i data-lucide="x-circle" class="w-5 h-5 text-red-400 shrink-0 mt-0.5"></i>
+                            <span class="text-xs sm:text-sm text-slate-600"><strong class="text-slate-700">Sus datos de salud en servidores externos</strong> que usted no controla ni conoce.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Columna SOLUCIÓN: sistema local -->
+                <div class="bg-white rounded-2xl border border-green-100 p-4 sm:p-6 lg:p-8 relative overflow-hidden shadow-lg shadow-green-500/5">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
+                    <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                            <i data-lucide="monitor-check" class="w-4 h-4 sm:w-5 sm:h-5 text-green-600"></i>
+                        </div>
+                        <h3 class="font-bold text-green-700 text-sm sm:text-base lg:text-lg leading-tight">Nuestro Sistema Local</h3>
+                    </div>
+                    <ul class="space-y-3 sm:space-y-4">
+                        <li class="flex items-start gap-2 sm:gap-3">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500 shrink-0 mt-0.5"></i>
+                            <span class="text-xs sm:text-sm text-slate-600"><strong class="text-slate-700">Pago único de por vida.</strong> Sin cuotas, sin vencimientos, sin sorpresas.</span>
+                        </li>
+                        <li class="flex items-start gap-2 sm:gap-3">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500 shrink-0 mt-0.5"></i>
+                            <span class="text-xs sm:text-sm text-slate-600"><strong class="text-slate-700">Respuesta al instante,</strong> porque funciona directo en su máquina sin esperar conexión.</span>
+                        </li>
+                        <li class="flex items-start gap-2 sm:gap-3">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500 shrink-0 mt-0.5"></i>
+                            <span class="text-xs sm:text-sm text-slate-600"><strong class="text-slate-700">Funciona siempre,</strong> aunque se corte la luz de Internet o el proveedor falle.</span>
+                        </li>
+                        <li class="flex items-start gap-2 sm:gap-3">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500 shrink-0 mt-0.5"></i>
+                            <span class="text-xs sm:text-sm text-slate-600"><strong class="text-slate-700">Los datos de salud nunca salen de su consultorio.</strong> Privacidad total.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- CTA central — CHECK 3: w-full en móvil, min-h-[48px] -->
+            <div class="text-center mt-10 fade-up">
+                <a href="https://wa.me/5493755548794?text=Hola,%20me%20gustar%C3%ADa%20pedir%20un%20presupuesto%20para%20mi%20consultorio"
+                   target="_blank" rel="noopener"
+                   class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-medico-500 to-medico-700 text-white font-semibold px-8 py-3.5 rounded-xl hover:shadow-xl hover:shadow-medico-500/25 transition-all duration-300 w-full sm:w-auto min-h-[48px] cta-btn">
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    Quiero mi presupuesto sin abonos mensuales
+                </a>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ============================================================
+         SECCIÓN 4: MÓDULOS Y FUNCIONES PRINCIPALES (TARJETAS)
+         ============================================================ -->
+    <section id="funciones" class="py-16 lg:py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <div class="text-center mb-14 fade-up">
+                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-medico-900 mb-4">
+                    Todo lo que necesita para atender, registrar y recetar
+                </h2>
+                <p class="text-base sm:text-lg text-slate-500 max-w-2xl mx-auto">
+                    Cada módulo fue pensado para resolver las tareas reales del día a día en un consultorio, sin complicaciones.
+                </p>
+            </div>
+
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
+
+                <!-- Tarjeta 1: Ficha y Evolución -->
+                <div class="card-hover bg-slate-50 rounded-2xl p-6 lg:p-8 border border-slate-100 fade-up">
+                    <div class="w-12 h-12 rounded-xl bg-medico-100 flex items-center justify-center mb-5">
+                        <i data-lucide="clipboard-list" class="w-6 h-6 text-medico-600"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-medico-900 mb-2">Ficha y Evolución de Consulta</h3>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Registro rápido de motivo, diagnóstico e historial completo del paciente en una sola pantalla. Todo queda guardado al instante.
+                    </p>
+                </div>
+
+                <!-- Tarjeta 2: Atajos y Textos Automáticos -->
+                <div class="card-hover bg-slate-50 rounded-2xl p-6 lg:p-8 border border-slate-100 fade-up">
+                    <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center mb-5">
+                        <i data-lucide="zap" class="w-6 h-6 text-amber-600"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-medico-900 mb-2">Atajos y Textos Automáticos</h3>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Escriba abreviaturas cortas que se transforman en párrafos enteros al instante. Ideal para redactar evoluciones y diagnósticos frecuentes en segundos.
+                    </p>
+                </div>
+
+                <!-- Tarjeta 3: Recetario Reglamentario -->
+                <div id="recetario" class="card-hover bg-slate-50 rounded-2xl p-6 lg:p-8 border border-slate-100 fade-up">
+                    <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-5">
+                        <i data-lucide="file-text" class="w-6 h-6 text-green-600"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-medico-900 mb-2">Recetario Médico Reglamentario</h3>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Generación e impresión de recetas en tamaño estándar de talonario (1/3 de hoja A4) con membrete automático, firma y sello prolijos. Listas para entregar.
+                    </p>
+                </div>
+
+                <!-- Tarjeta 4: Candado Personal -->
+                <div class="card-hover bg-slate-50 rounded-2xl p-6 lg:p-8 border border-slate-100 fade-up">
+                    <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-5">
+                        <i data-lucide="lock-keyhole" class="w-6 h-6 text-purple-600"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-medico-900 mb-2">Protección con Candado Personal</h3>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Base de datos resguardada con PIN personal que solo el médico puede abrir en su computadora. Nadie más accede a los datos de sus pacientes.
+                    </p>
+                </div>
+
+                <!-- Tarjeta 5: Respaldo en Pendrive -->
+                <div class="card-hover bg-slate-50 rounded-2xl p-6 lg:p-8 border border-slate-100 fade-up">
+                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-5">
+                        <i data-lucide="hard-drive-download" class="w-6 h-6 text-blue-600"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-medico-900 mb-2">Respaldo en Pendrive con 1 Clic</h3>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Un solo botón para resguardar copias seguras de todos los pacientes en un disco externo o memoria USB. Tranquilidad total ante cualquier imprevisto.
+                    </p>
+                </div>
+
+                <!-- Tarjeta CTA -->
+                <div class="card-hover bg-gradient-to-br from-medico-500 to-medico-700 rounded-2xl p-6 lg:p-8 text-white flex flex-col justify-between fade-up">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-5">
+                            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2">¿Quiere verlo en acción?</h3>
+                        <p class="text-sm text-white/80 leading-relaxed mb-6">
+                            Solicite una demostración personalizada sin compromiso y vea cómo simplifica su día a día.
+                        </p>
+                    </div>
+                    <a href="https://wa.me/5493755548794?text=Hola,%20me%20gustar%C3%ADa%20pedir%20un%20presupuesto%20para%20mi%20consultorio"
+                       target="_blank" rel="noopener"
+                       class="inline-flex items-center justify-center gap-2 bg-white text-medico-700 font-semibold px-5 py-3 rounded-xl hover:bg-medico-50 transition-all duration-300 text-sm w-full min-h-[48px] cta-btn">
+                        Pedir un Presupuesto
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ============================================================
+         SECCIÓN 5: RECETARIO Y CONFIGURACIÓN (DETALLE VISUAL)
+         ============================================================ -->
+    <section class="py-16 lg:py-24 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+                
+                <!-- Mockup receta -->
+                <div class="fade-up order-2 lg:order-1">
+                    <div class="bg-white rounded-2xl shadow-xl shadow-medico-500/5 border border-slate-200 p-5 sm:p-8 max-w-md mx-auto">
+                        <!-- Simulación de receta médica -->
+                        <div class="border-2 border-medico-200 rounded-lg p-4 sm:p-5 relative">
+                            <!-- Membrete -->
+                            <div class="text-center border-b border-medico-100 pb-3 mb-4">
+                                <p class="text-sm font-bold text-medico-800">Dr. Juan Carlos Avellán</p>
+                                <p class="text-[11px] text-slate-500">Medicina General — M.P. 5966</p>
+                                <p class="text-[11px] text-slate-400">Av. San Martín 1240 — Posadas, Misiones</p>
+                            </div>
+
+                            <!-- Cuerpo receta -->
+                            <div class="mb-4">
+                                <p class="text-[10px] text-slate-400 mb-1 uppercase tracking-wider font-semibold">Fecha: 22/09/2026</p>
+                                <p class="text-[10px] text-slate-400 mb-3 uppercase tracking-wider font-semibold">Paciente: García, María Eugenia</p>
+                                <div class="border-l-2 border-medico-300 pl-3 space-y-2">
+                                    <p class="text-xs text-slate-700">Rp/</p>
+                                    <p class="text-xs text-slate-700">1) Ibuprofeno 400mg — 1 comp. cada 8hs por 5 días</p>
+                                    <p class="text-xs text-slate-700">2) Omeprazol 20mg — 1 comp. en ayunas por 10 días</p>
+                                </div>
+                            </div>
+
+                            <!-- Firma -->
+                            <div class="border-t border-slate-200 pt-3 flex items-end justify-between">
+                                <div>
+                                    <p class="text-[10px] text-slate-400">Diagnóstico: Cefalea tensional</p>
+                                </div>
+                                <div class="text-center">
+                                    <div class="w-20 border-b border-slate-300 mb-1"></div>
+                                    <p class="text-[9px] text-slate-400">Firma y Sello</p>
+                                </div>
+                            </div>
+
+                            <!-- Badge -->
+                            <div class="absolute -top-3 -right-3 bg-medico-500 text-white text-[9px] font-bold px-2 py-1 rounded-full shadow-lg">
+                                1/3 de A4
+                            </div>
+                        </div>
+
+                        <p class="text-center text-[11px] text-slate-400 mt-3">
+                            Receta generada automáticamente — lista para imprimir
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Texto explicativo -->
+                <div class="fade-up order-1 lg:order-2">
+                    <div class="inline-flex items-center gap-2 bg-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-5">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                        Recetario Integrado
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-medico-900 mb-5 leading-tight">
+                        Recetas prolijas y reglamentarias, listas en segundos
+                    </h2>
+                    <p class="text-sm sm:text-base text-slate-500 leading-relaxed mb-6">
+                        El sistema genera recetas en tamaño estándar de talonario (1/3 de hoja A4) con todo lo necesario: membrete con sus datos profesionales, nombre del paciente, prescripción, fecha y espacio para firma y sello. Solo complete la medicación y presione imprimir.
+                    </p>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500 shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-600">Membrete automático con nombre, especialidad y matrícula.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500 shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-600">Impresión en papel común, sin necesidad de formularios especiales.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500 shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-600">Historial de recetas emitidas para cada paciente.</span>
+                        </li>
+                    </ul>
+
+                    <!-- CHECK 3: w-full en móvil, min-h-[48px] -->
+                    <a href="https://wa.me/5493755548794?text=Hola,%20quisiera%20coordinar%20una%20demostraci%C3%B3n%20del%20sistema"
+                       target="_blank" rel="noopener"
+                       class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-medico-500 to-medico-700 text-white font-semibold px-7 py-3.5 rounded-xl hover:shadow-xl hover:shadow-medico-500/25 transition-all duration-300 text-sm w-full sm:w-auto min-h-[48px] cta-btn">
+                        <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        Coordinar una Demostración
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ============================================================
+         SECCIÓN 6: PUESTA EN MARCHA EN 3 PASOS
+         ============================================================ -->
+    <section class="py-16 lg:py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <div class="text-center mb-14 fade-up">
+                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-medico-900 mb-4">
+                    Operativo en 3 pasos simples
+                </h2>
+                <p class="text-base sm:text-lg text-slate-500 max-w-2xl mx-auto">
+                    Desde la instalación hasta la primera receta, en minutos. Sin complicaciones técnicas.
+                </p>
+            </div>
+
+            <div class="relative max-w-4xl mx-auto">
+                <!-- Línea conectora (solo desktop) -->
+                <div class="hidden lg:block step-connector" style="left:16%; width:68%;"></div>
+
+                <div class="grid lg:grid-cols-3 gap-8 lg:gap-6 relative z-10">
+
+                    <!-- Paso 1 -->
+                    <div class="text-center fade-up">
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-medico-500 to-medico-700 text-white text-xl font-extrabold flex items-center justify-center mx-auto mb-5 shadow-lg shadow-medico-500/25 relative z-10">
+                            1
+                        </div>
+                        <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                            <div class="w-10 h-10 rounded-lg bg-medico-100 flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="download" class="w-5 h-5 text-medico-600"></i>
+                            </div>
+                            <h3 class="font-bold text-medico-900 mb-2">Instalación Guiada</h3>
+                            <p class="text-sm text-slate-500">Se instala en su computadora de trabajo con asistencia paso a paso, sin complicaciones.</p>
+                        </div>
+                    </div>
+
+                    <!-- Paso 2 -->
+                    <div class="text-center fade-up">
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-medico-500 to-medico-700 text-white text-xl font-extrabold flex items-center justify-center mx-auto mb-5 shadow-lg shadow-medico-500/25 relative z-10">
+                            2
+                        </div>
+                        <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                            <div class="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="settings" class="w-5 h-5 text-amber-600"></i>
+                            </div>
+                            <h3 class="font-bold text-medico-900 mb-2">Configuración en 2 Minutos</h3>
+                            <p class="text-sm text-slate-500">Un asistente inicial le pide su nombre, especialidad, matrícula y un PIN de seguridad. Nada más.</p>
+                        </div>
+                    </div>
+
+                    <!-- Paso 3 -->
+                    <div class="text-center fade-up">
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-medico-500 to-medico-700 text-white text-xl font-extrabold flex items-center justify-center mx-auto mb-5 shadow-lg shadow-medico-500/25 relative z-10">
+                            3
+                        </div>
+                        <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                            <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="rocket" class="w-5 h-5 text-green-600"></i>
+                            </div>
+                            <h3 class="font-bold text-medico-900 mb-2">Listo para Atender</h3>
+                            <p class="text-sm text-slate-500">Desde el primer día puede registrar pacientes, evoluciones y emitir recetas sin esperas.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA pasos — CHECK 3: w-full en móvil, min-h-[48px] -->
+            <div class="text-center mt-12 fade-up">
+                <a href="https://wa.me/5493755548794?text=Hola,%20quisiera%20coordinar%20una%20demostraci%C3%B3n%20del%20sistema"
+                   target="_blank" rel="noopener"
+                   class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-medico-500 to-medico-700 text-white font-semibold px-8 py-3.5 rounded-xl hover:shadow-xl hover:shadow-medico-500/25 transition-all duration-300 w-full sm:w-auto min-h-[48px] cta-btn">
+                    <i data-lucide="calendar-check" class="w-5 h-5"></i>
+                    Solicitar Instalación / Consultar Disponibilidad
+                </a>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ============================================================
+         SECCIÓN 7: PREGUNTAS FRECUENTES (ACORDEÓN)
+         ============================================================ -->
+    <section id="preguntas" class="py-16 lg:py-24 bg-slate-50">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <div class="text-center mb-12 fade-up">
+                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-medico-900 mb-4">
+                    Preguntas Frecuentes
+                </h2>
+                <p class="text-base sm:text-lg text-slate-500">
+                    Las dudas más habituales que recibimos de profesionales de la salud.
+                </p>
+            </div>
+
+            <div class="space-y-3 fade-up" id="faq-container">
+                
+                <!-- FAQ 1 -->
+                <div class="faq-item bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <!-- CHECK 3: min-h-[48px] para zona táctil -->
+                    <button class="faq-toggle w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-slate-50 transition-colors min-h-[48px]" aria-expanded="false">
+                        <span class="font-semibold text-medico-900 text-sm sm:text-base pr-4">¿Tengo que pagar un abono todos los meses?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-medico-500 shrink-0 faq-chevron"></i>
+                    </button>
+                    <div class="faq-answer px-4 sm:px-5 pb-4 sm:pb-5">
+                        <p class="text-sm text-slate-500 leading-relaxed">
+                            <strong class="text-slate-700">No.</strong> El sistema se abona una sola vez y queda instalado de forma permanente en su computadora. No hay cuotas mensuales, renovaciones anuales ni costos ocultos. Es suyo para siempre.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FAQ 2 -->
+                <div class="faq-item bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <button class="faq-toggle w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-slate-50 transition-colors min-h-[48px]" aria-expanded="false">
+                        <span class="font-semibold text-medico-900 text-sm sm:text-base pr-4">¿Qué pasa si en el consultorio se corta Internet?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-medico-500 shrink-0 faq-chevron"></i>
+                    </button>
+                    <div class="faq-answer px-4 sm:px-5 pb-4 sm:pb-5">
+                        <p class="text-sm text-slate-500 leading-relaxed">
+                            <strong class="text-slate-700">Absolutamente nada.</strong> El programa funciona directamente en su computadora, sin necesidad de conexión. Puede seguir atendiendo, cargando evoluciones e imprimiendo recetas con total normalidad, como si nada hubiera pasado.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FAQ 3 -->
+                <div class="faq-item bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <button class="faq-toggle w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-slate-50 transition-colors min-h-[48px]" aria-expanded="false">
+                        <span class="font-semibold text-medico-900 text-sm sm:text-base pr-4">¿Es difícil de aprender a usar?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-medico-500 shrink-0 faq-chevron"></i>
+                    </button>
+                    <div class="faq-answer px-4 sm:px-5 pb-4 sm:pb-5">
+                        <p class="text-sm text-slate-500 leading-relaxed">
+                            <strong class="text-slate-700">Para nada.</strong> Fue diseñado pensando en médicos, no en técnicos informáticos. La interfaz es clara, directa y está en castellano. La mayoría de los profesionales comienzan a usarlo con soltura en los primeros minutos.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FAQ 4 -->
+                <div class="faq-item bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <button class="faq-toggle w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-slate-50 transition-colors min-h-[48px]" aria-expanded="false">
+                        <span class="font-semibold text-medico-900 text-sm sm:text-base pr-4">¿Puedo llevarme una copia de seguridad por si cambio de equipo?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-medico-500 shrink-0 faq-chevron"></i>
+                    </button>
+                    <div class="faq-answer px-4 sm:px-5 pb-4 sm:pb-5">
+                        <p class="text-sm text-slate-500 leading-relaxed">
+                            <strong class="text-slate-700">Sí, por supuesto.</strong> El sistema incluye un botón de respaldo que copia toda su base de pacientes a un pendrive o disco externo con un solo clic. Si cambia de computadora, solo tiene que restaurar esa copia y sigue trabajando donde lo dejó.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ============================================================
+         SECCIÓN 8: CIERRE COMERCIAL (CTA FINAL)
+         ============================================================ -->
+    <section class="py-16 lg:py-24 bg-gradient-to-br from-medico-700 via-medico-800 to-medico-900 relative overflow-hidden">
+        <!-- Decoración de fondo — CHECK 4: contenido en section con overflow:hidden -->
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-10 left-10 w-40 h-40 rounded-full bg-white/20 blur-3xl"></div>
+            <div class="absolute bottom-10 right-10 w-60 h-60 rounded-full bg-medico-400/20 blur-3xl"></div>
+        </div>
+
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 fade-up">
+            <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="heart-pulse" class="w-8 h-8 text-white"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white mb-5 leading-tight">
+                Organice su consultorio hoy.<br class="hidden sm:block"> Sin abonos. Sin complicaciones.
+            </h2>
+            <p class="text-base sm:text-lg text-medico-200 mb-8 max-w-xl mx-auto leading-relaxed">
+                Converse con nosotros por WhatsApp, resuelva todas sus dudas y reciba su presupuesto en minutos. Atención personalizada y directa.
+            </p>
+
+            <!-- CHECK 3: w-full en móvil, min-h-[52px], feedback táctil -->
+            <a href="https://wa.me/5493755548794?text=Hola,%20quiero%20consultar%20el%20precio%20y%20detalles%20del%20sistema%20de%20Historias%20Cl%C3%ADnicas"
+               target="_blank" rel="noopener"
+               class="inline-flex items-center justify-center gap-3 bg-white text-medico-700 font-bold px-8 py-4 rounded-xl hover:shadow-2xl hover:shadow-black/20 transition-all duration-300 text-base w-full sm:w-auto min-h-[52px] cta-btn">
+                <svg class="w-6 h-6 text-green-600 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                Escribirnos por WhatsApp Ahora
+            </a>
+
+            <p class="text-xs text-medico-300 mt-6">
+                +54 9 3755 548794 — Respuesta inmediata en horario laboral
+            </p>
+        </div>
+    </section>
+
+
+    <!-- ============================================================
+         PIE DE PÁGINA
+         ============================================================ -->
+    <!-- CHECK 1: footer-safe aplica padding-bottom con env(safe-area-inset-bottom) -->
+    <footer class="bg-medico-900 text-white/60 py-10 footer-safe">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                
+                <!-- Columna 1: Marca -->
+                <div>
+                    <a href="https://www.facebook.com/elektrotechservice/" target="_blank" rel="noopener" class="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-medico-500 to-medico-700 flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
+                        </div>
+                        <span class="text-white font-bold text-sm">Misiones Tech Service</span>
+                    </a>
+                    <p class="text-xs leading-relaxed">
+                        Desarrollo de software profesional para el sector de la salud. Soluciones locales, seguras y sin abonos mensuales.
+                    </p>
+                </div>
+
+                <!-- Columna 2: Enlaces -->
+                <div>
+                    <h4 class="text-white font-semibold text-sm mb-3">Navegación</h4>
+                    <ul class="space-y-2 text-xs">
+                        <li><a href="#inicio" class="hover:text-white transition-colors">Inicio</a></li>
+                        <li><a href="#beneficios" class="hover:text-white transition-colors">Beneficios</a></li>
+                        <li><a href="#recetario" class="hover:text-white transition-colors">Recetario</a></li>
+                        <li><a href="#preguntas" class="hover:text-white transition-colors">Preguntas Frecuentes</a></li>
+                    </ul>
+                </div>
+
+                <!-- Columna 3: Contacto -->
+                <div>
+                    <h4 class="text-white font-semibold text-sm mb-3">Contacto Directo</h4>
+                    <ul class="space-y-2 text-xs">
+                        <li class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-green-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            <a href="https://wa.me/5493755548794?text=Hola,%20quiero%20consultar%20el%20precio%20y%20detalles%20del%20sistema%20de%20Historias%20Cl%C3%ADnicas" target="_blank" rel="noopener" class="hover:text-white transition-colors">
+                                +54 9 3755 548794
+                            </a>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-4 h-4 shrink-0"></i>
+                            Misiones, Argentina
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p class="text-xs">&copy; 2026 Misiones Tech Service. Todos los derechos reservados.</p>
+                <p class="text-xs">Software profesional para consultorios médicos.</p>
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- ============================================================
+         BOTÓN FLOTANTE DE WHATSAPP
+         CHECK 1: Posición con env(safe-area-inset-bottom) para iPhone
+         ============================================================ -->
+    <a href="https://wa.me/5493755548794?text=Hola,%20quiero%20consultar%20el%20precio%20y%20detalles%20del%20sistema%20de%20Historias%20Cl%C3%ADnicas"
+       target="_blank" rel="noopener"
+       class="whatsapp-float"
+       aria-label="Contactar por WhatsApp">
+        <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
+
+
+    <!-- ============================================================
+         JAVASCRIPT: Interactividad
+         ============================================================ -->
+    <script>
+        // ── Inicializar íconos Lucide ──
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        // ── Menú Móvil ──
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuBtn.addEventListener('click', function() {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        function closeMobileMenu() {
+            mobileMenu.classList.add('hidden');
+        }
+
+        // CHECK 4: Cerrar menú al tocar fuera de él
+        document.addEventListener('click', function(e) {
+            if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+
+        // ── Navbar con efecto scroll ──
+        const navbar = document.getElementById('navbar');
+        let ticking = false;
+        window.addEventListener('scroll', function() {
+            if (!ticking) {
+                window.requestAnimationFrame(function() {
+                    if (window.scrollY > 50) {
+                        navbar.classList.add('navbar-scrolled');
+                    } else {
+                        navbar.classList.remove('navbar-scrolled');
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }, { passive: true });
+
+        // ── Acordeón de Preguntas Frecuentes ──
+        const faqToggles = document.querySelectorAll('.faq-toggle');
+        faqToggles.forEach(function(toggle) {
+            toggle.addEventListener('click', function() {
+                const faqItem = this.closest('.faq-item');
+                const isActive = faqItem.classList.contains('active');
+
+                // Cerrar todos los demás
+                document.querySelectorAll('.faq-item.active').forEach(function(item) {
+                    item.classList.remove('active');
+                    item.querySelector('.faq-toggle').setAttribute('aria-expanded', 'false');
+                });
+
+                // Abrir/cerrar el actual
+                if (!isActive) {
+                    faqItem.classList.add('active');
+                    this.setAttribute('aria-expanded', 'true');
+                }
+            });
+        });
+
+        // ── Animaciones de entrada al hacer scroll (Intersection Observer) ──
+        const fadeElements = document.querySelectorAll('.fade-up');
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px 0px -60px 0px',
+            threshold: 0.1
+        };
+
+        const fadeObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    fadeObserver.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        fadeElements.forEach(function(el) {
+            fadeObserver.observe(el);
+        });
+
+        // ── Scroll suave para enlaces internos ──
+        document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+            anchor.addEventListener('click', function(e) {
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetEl = document.querySelector(targetId);
+                if (targetEl) {
+                    e.preventDefault();
+                    const navHeight = navbar.offsetHeight;
+                    const targetPosition = targetEl.getBoundingClientRect().top + window.pageYOffset - navHeight - 16;
+                    window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
