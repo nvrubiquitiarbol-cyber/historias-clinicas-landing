@@ -46,7 +46,7 @@ GitHub Pages
 Suba el repositorio a GitHub.
 Vaya a Settings → Pages.
 Seleccione la rama main y la carpeta / (root).
-Su página estará disponible en https://su-usuario.github.io/nombre-del-repo/.
+Su página estará disponible en (https://github.com/nvrubiquitiarbol-cyber/historias-clinicas-landing)
 Cloudflare Pages
 Conecte el repositorio desde el panel de Cloudflare Pages.
 No requiere comando de compilación.
