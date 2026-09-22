@@ -55,7 +55,9 @@
         /* CHECK 4: Bloqueo estricto de desborde horizontal global */
         html, body {
             overflow-x: hidden;
-            max-width: 100vw;
+            width: 100%;
+            max-width: 100%;
+            position: relative;
         }
 
         /* ========== ANIMACIÓN SUAVE DE ENTRADA ========== */
@@ -106,11 +108,16 @@
             display: block;
         }
 
-        /* CHECK 2: Mockup móvil — contenedor con scroll horizontal suave si se necesita */
+        /* CHECK 2: Mockup móvil — contenedor con scroll horizontal suave encapsulado */
+        .mockup-scroll-wrapper {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+        }
         @media (max-width: 639px) {
             .mockup-scroll-wrapper {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
                 scroll-snap-type: x mandatory;
                 scrollbar-width: none; /* Firefox */
                 padding-bottom: 4px;
@@ -323,30 +330,30 @@
     <!-- ============================================================
          SECCIÓN 2: CABECERA PRINCIPAL (HERO)
          ============================================================ -->
-    <section id="inicio" class="hero-gradient pt-28 lg:pt-36 pb-16 lg:pb-24 overflow-hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <section id="inicio" class="hero-gradient pt-28 lg:pt-36 pb-16 lg:pb-24 overflow-hidden w-full max-w-full">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full min-w-0">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center w-full max-w-full min-w-0">
                 
                 <!-- Columna izquierda: Texto -->
-                <div class="fade-up">
+                <div class="fade-up w-full max-w-full min-w-0">
                     <!-- Etiqueta superior -->
-                    <div class="inline-flex items-center gap-2 bg-medico-100 text-medico-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        Edición Consultorio — Pago Único
+                    <div class="inline-flex items-center gap-2 bg-medico-100 text-medico-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 max-w-full">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></span>
+                        <span class="truncate">Edición Consultorio — Pago Único</span>
                     </div>
 
-                    <h1 class="text-[1.7rem] sm:text-4xl lg:text-[2.75rem] font-extrabold text-medico-900 leading-tight mb-6">
+                    <h1 class="text-2xl sm:text-4xl lg:text-[2.75rem] font-extrabold text-medico-900 leading-tight mb-6 break-words">
                         El sistema de fichas médicas y recetas que cuida su tiempo y 
                         <span class="text-transparent bg-clip-text bg-gradient-to-r from-medico-500 to-medico-700">protege la privacidad</span> 
                         de sus pacientes.
                     </h1>
 
-                    <p class="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-xl">
+                    <p class="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-xl break-words">
                         Instalación local en su computadora, sin alquileres mensuales y con funcionamiento garantizado al 100&percnt; sin depender de Internet ni de la nube.
                     </p>
 
                     <!-- Botones Hero — CHECK 3: w-full en móvil, min-h-[48px] -->
-                    <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex flex-col sm:flex-row gap-4 w-full">
                         <a href="https://wa.me/5493755548794?text=Hola,%20quiero%20consultar%20el%20precio%20y%20detalles%20del%20sistema%20de%20Historias%20Cl%C3%ADnicas"
                            target="_blank" rel="noopener"
                            class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-medico-500 to-medico-700 text-white font-semibold px-7 py-3.5 rounded-xl hover:shadow-xl hover:shadow-medico-500/25 transition-all duration-300 text-base w-full sm:w-auto min-h-[48px] cta-btn">
@@ -355,7 +362,7 @@
                         </a>
                         <a href="#funciones"
                            class="inline-flex items-center justify-center gap-2 bg-white text-medico-700 font-semibold px-7 py-3.5 rounded-xl border-2 border-medico-200 hover:border-medico-400 hover:bg-medico-50 transition-all duration-300 text-base w-full sm:w-auto min-h-[48px] cta-btn">
-                            <i data-lucide="play-circle" class="w-5 h-5"></i>
+                            <i data-lucide="play-circle" class="w-5 h-5 shrink-0"></i>
                             Ver Cómo Funciona
                         </a>
                     </div>
@@ -378,10 +385,10 @@
                 </div>
 
                 <!-- Columna derecha: Mockup del Software -->
-                <!-- CHECK 2: En móvil, wrapper con scroll horizontal táctil ultra-fluido -->
-                <div class="fade-up lg:pl-4">
-                    <div class="mockup-scroll-wrapper rounded-lg">
-                        <div class="mockup-scroll-inner">
+                <!-- CHECK 2: En móvil, wrapper con scroll horizontal táctil ultra-fluido encapsulado -->
+                <div class="fade-up lg:pl-4 w-full max-w-full min-w-0 overflow-hidden">
+                    <div class="mockup-scroll-wrapper w-full max-w-full overflow-x-auto rounded-lg">
+                        <div class="mockup-scroll-inner min-w-[480px] sm:min-w-0 sm:w-full">
                             <div class="mockup-window max-w-2xl mx-auto">
                                 <!-- Barra de título tipo Windows -->
                                 <div class="mockup-titlebar">
@@ -520,7 +527,7 @@
                 </p>
             </div>
 
-            <div class="compare-grid grid grid-cols-2 gap-4 sm:gap-6 lg:gap-8 max-w-5xl mx-auto fade-up">
+            <div class="compare-grid grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 max-w-5xl mx-auto fade-up w-full max-w-full min-w-0">
                 
                 <!-- Columna PROBLEMA: software web -->
                 <div class="bg-white rounded-2xl border border-red-100 p-4 sm:p-6 lg:p-8 relative overflow-hidden">
